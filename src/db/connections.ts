@@ -58,3 +58,10 @@ export async function findReadyConnection(): Promise<ReadyConnection | null> {
     timezone: row.timezone,
   };
 }
+
+export async function findAttioWebhookSecret(): Promise<string | null> {
+  const row = await prisma.connection.findFirst({
+    select: { attioWebhookSecret: true },
+  });
+  return row?.attioWebhookSecret ?? null;
+}

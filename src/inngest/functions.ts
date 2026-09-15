@@ -31,6 +31,16 @@ export const projectTask = inngest.createFunction(
       limit: 5,
       period: "1s",
     },
+    debounce: {
+      key: "event.data.taskId",
+      period: "2s",
+    },
+    cancelOn: [
+      {
+        event: attioTaskDeleted,
+        if: "event.data.taskId == async.data.taskId",
+      },
+    ],
     concurrency: [
       {
         limit: 1,
