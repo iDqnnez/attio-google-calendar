@@ -24,6 +24,10 @@ export type ProjectionDecision =
   | { action: "delete" }
   | { action: "noop" };
 
+export function eventIdForTask(taskId: string): string {
+  return taskId.replaceAll("-", "");
+}
+
 export function decideProjection(input: {
   task: Task | null;
   binding: Binding | null;
@@ -55,7 +59,7 @@ function eventDraft(
   const start = civilDate(deadline, connectionTimezone);
 
   return {
-    id: task.id.replaceAll("-", ""),
+    id: eventIdForTask(task.id),
     summary: task.content,
     description: taskUrl(workspaceSlug, task.id),
     start: { date: start },

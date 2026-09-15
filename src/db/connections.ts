@@ -36,3 +36,25 @@ export const prismaConnectionStore: ConnectionStore = {
     });
   },
 };
+
+export type ReadyConnection = {
+  googleAccountSub: string;
+  googleRefreshToken: string;
+  calendarId: string;
+  workspaceSlug: string;
+  timezone: string;
+};
+
+export async function findReadyConnection(): Promise<ReadyConnection | null> {
+  const row = await prisma.connection.findFirst();
+  if (row == null || row.calendarId == null || row.workspaceSlug == null) {
+    return null;
+  }
+  return {
+    googleAccountSub: row.googleAccountSub,
+    googleRefreshToken: row.googleRefreshToken,
+    calendarId: row.calendarId,
+    workspaceSlug: row.workspaceSlug,
+    timezone: row.timezone,
+  };
+}

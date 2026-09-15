@@ -75,3 +75,25 @@ export async function googleAccountSub(accessToken: string): Promise<string> {
   }
   return userInfoSchema.parse(await response.json()).sub;
 }
+
+export async function refreshGoogleAccessToken(params: {
+  refreshToken: string;
+  clientId: string;
+  clientSecret: string;
+}): Promise<string> {
+  const body = new URLSearchParams({
+    grant_type: "refresh_token",
+    refresh_token: params.refreshToken,
+    client_id: params.clientId,
+    client_secret: params.clientSecret,
+  });
+  const response = await fetch("https://oauth2.googleapis.com/token", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!response.ok) {
+    throw new Error(`Google token refresh failed (${response.status})`);
+  }
+  return tokenResponseSchema.parse(await response.json()).access_token;
+}
