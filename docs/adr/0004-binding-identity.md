@@ -1,0 +1,3 @@
+# Three-layer Binding identity
+
+Attio cannot store an Event id on a Task. Google insert is only idempotent with a client-chosen base32hex Event `id`; a UUID with hyphens stripped is legal. Cancelled Events eventually vanish and may keep only `id`. The Binding is therefore (1) a deterministic Event `id` derived from the Task id, (2) the Task id in `extendedProperties.private`, and (3) a Postgres row (Task id, Calendar id, Event id, etag). Heal is insert → `409` → GET/update, not a second Event. A database-only Binding duplicates Events if create succeeds and the worker dies; an Event-id-only Binding loses etags and expired cancelled Events.
