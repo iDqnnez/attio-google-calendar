@@ -1,0 +1,31 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Connection {
+  id                 String   @id @default(cuid())
+  googleAccountSub   String   @unique
+  googleRefreshToken String
+  calendarId         String?
+  attioWebhookId     String?
+  attioWebhookSecret String?
+  workspaceSlug      String?
+  timezone           String
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Binding {
+  id         String   @id @default(cuid())
+  taskId     String   @unique
+  calendarId String
+  eventId    String
+  etag       String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}

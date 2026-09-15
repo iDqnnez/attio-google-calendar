@@ -49,6 +49,7 @@ coverage.xml
 ################
 .env
 .env.*
+!.env.example
 .venv/
 venv/
 ENV/
@@ -187,3 +188,13 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 $RECYCLE.BIN/
+
+# Node / Next.js #
+##################
+node_modules/
+.next/
+out/
+coverage/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
