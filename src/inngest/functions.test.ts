@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { attioTaskDeleted, backfillRequested, projectionRequested } from "./events";
-import { backfillOpenTasks, functions, projectTask } from "./functions";
+import { backfillOpenTasks, catchUpTasks, functions, projectTask } from "./functions";
 
 describe("projectTask", () => {
   it("debounces by Task id so rapid updates apply the latest state", () => {
@@ -21,6 +21,16 @@ describe("projectTask", () => {
       expect.arrayContaining([projectTask, backfillOpenTasks]),
     );
     expect(backfillOpenTasks.opts.triggers).toEqual([backfillRequested]);
+    expect(projectTask.opts.triggers).toEqual(
+      expect.arrayContaining([projectionRequested]),
+    );
+  });
+
+  it("Catch-up runs hourly and fans out through the existing Projection worker", () => {
+    expect(functions).toEqual(
+      expect.arrayContaining([projectTask, catchUpTasks]),
+    );
+    expect(catchUpTasks.opts.triggers).toEqual([{ cron: "0 * * * *" }]);
     expect(projectTask.opts.triggers).toEqual(
       expect.arrayContaining([projectionRequested]),
     );

@@ -1,6 +1,19 @@
 import type { BindingRecord, BindingStore } from "@/projection/project";
 import { prisma } from "./prisma";
 
+export async function listBoundTaskIds(query: {
+  limit: number;
+  offset: number;
+}): Promise<string[]> {
+  const rows = await prisma.binding.findMany({
+    select: { taskId: true },
+    orderBy: { taskId: "asc" },
+    skip: query.offset,
+    take: query.limit,
+  });
+  return rows.map((row) => row.taskId);
+}
+
 export const prismaBindingStore: BindingStore = {
   async findByTaskId(taskId) {
     const row = await prisma.binding.findUnique({ where: { taskId } });
