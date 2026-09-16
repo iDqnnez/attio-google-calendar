@@ -15,6 +15,8 @@ export const prismaConnectionStore: ConnectionStore = {
       calendarId: row.calendarId,
       workspaceSlug: row.workspaceSlug,
       timezone: row.timezone,
+      attioWebhookId: row.attioWebhookId,
+      attioWebhookSecret: row.attioWebhookSecret,
     };
   },
   async save(connection) {
@@ -26,12 +28,16 @@ export const prismaConnectionStore: ConnectionStore = {
         calendarId: connection.calendarId,
         workspaceSlug: connection.workspaceSlug,
         timezone: connection.timezone,
+        attioWebhookId: connection.attioWebhookId,
+        attioWebhookSecret: connection.attioWebhookSecret,
       },
       update: {
         googleRefreshToken: connection.googleRefreshToken,
         calendarId: connection.calendarId,
         workspaceSlug: connection.workspaceSlug,
         timezone: connection.timezone,
+        attioWebhookId: connection.attioWebhookId,
+        attioWebhookSecret: connection.attioWebhookSecret,
       },
     });
   },

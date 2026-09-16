@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { attioWorkspaceSlug } from "@/attio/identify";
+import { attioWebhooks } from "@/attio/webhooks";
 import { completeConnect } from "@/connect/complete";
 import { prismaConnectionStore } from "@/db/connections";
 import { appUrl, attioEnv, connectionTimezone, googleOAuthEnv } from "@/env";
@@ -11,6 +12,8 @@ import {
   googleAccountSub,
   GOOGLE_OAUTH_STATE_COOKIE,
 } from "@/google/oauth";
+import { inngest } from "@/inngest/client";
+import { backfillRequested } from "@/inngest/events";
 
 function homeRedirect(error?: string): NextResponse {
   const url = new URL(appUrl());
@@ -60,8 +63,13 @@ export async function GET(request: Request) {
       google: { sub, refreshToken: tokens.refreshToken },
       workspaceSlug,
       timezone: connectionTimezone(),
+      webhookTargetUrl: `${appUrl()}/api/webhooks/attio`,
       connections: prismaConnectionStore,
       calendars: googleDedicatedCalendar(tokens.accessToken),
+      webhooks: attioWebhooks(attioEnv().apiToken),
+      enqueueBackfill: async () => {
+        await inngest.send(backfillRequested.create({}));
+      },
     });
     return homeRedirect();
   } catch {

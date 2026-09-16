@@ -20,3 +20,7 @@ export const attioTaskDeleted = eventType("attio/task.deleted", {
 export const projectionRequested = eventType("app/projection.requested", {
   schema: taskProjectionData,
 });
+
+export const backfillRequested = eventType("app/backfill.requested", {
+  schema: z.object({}),
+});

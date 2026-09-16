@@ -1,5 +1,6 @@
 import { NonRetriableError } from "inngest";
 import { attioTasks } from "@/attio/tasks";
+import { runBackfillLoader } from "@/connect/backfill";
 import { prismaBindingStore } from "@/db/bindings";
 import { findReadyConnection } from "@/db/connections";
 import { attioEnv, googleOAuthEnv } from "@/env";
@@ -15,6 +16,7 @@ import {
   attioTaskCreated,
   attioTaskDeleted,
   attioTaskUpdated,
+  backfillRequested,
   projectionRequested,
 } from "./events";
 
@@ -86,6 +88,26 @@ export const projectTask = inngest.createFunction(
   },
 );
 
+export const backfillOpenTasks = inngest.createFunction(
+  {
+    id: "backfill-open-tasks",
+    triggers: [backfillRequested],
+  },
+  async ({ step }) => {
+    const tasks = attioTasks(attioEnv().apiToken);
+    return runBackfillLoader({
+      listOpenPage: (query) =>
+        step.run("list-open-tasks", () => tasks.listOpen(query)),
+      enqueueChunk: async (taskIds) => {
+        await step.sendEvent(
+          "enqueue-projections",
+          taskIds.map((taskId) => projectionRequested.create({ taskId })),
+        );
+      },
+    });
+  },
+);
+
 async function googleEvents() {
   const ready = await findReadyConnection();
   if (ready == null) {
@@ -100,4 +122,4 @@ async function googleEvents() {
   return googleCalendarEvents(accessToken);
 }
 
-export const functions = [projectTask];
+export const functions = [projectTask, backfillOpenTasks];
