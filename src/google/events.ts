@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { GoogleHttpError } from "./errors";
+import { googleHttpErrorFromResponse } from "./errors";
 import type { CalendarEvents, WrittenEvent } from "@/projection/project";
 
 const writtenEventSchema = z.object({
@@ -56,7 +56,7 @@ export function googleCalendarEvents(accessToken: string): CalendarEvents {
       ) {
         return;
       }
-      throw googleError(response);
+      throw await googleHttpErrorFromResponse(response);
     },
   };
 }
@@ -79,11 +79,7 @@ async function calendarFetch(
 
 async function parseWrittenEvent(response: Response): Promise<WrittenEvent> {
   if (!response.ok) {
-    throw googleError(response);
+    throw await googleHttpErrorFromResponse(response);
   }
   return writtenEventSchema.parse(await response.json());
-}
-
-function googleError(response: Response): GoogleHttpError {
-  return new GoogleHttpError(response.status, response.headers.get("Retry-After"));
 }

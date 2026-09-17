@@ -72,7 +72,8 @@ export async function GET(request: Request) {
       },
     });
     return homeRedirect();
-  } catch {
+  } catch (error) {
+    console.error("Google connect failed", error);
     return homeRedirect("connect");
   }
 }

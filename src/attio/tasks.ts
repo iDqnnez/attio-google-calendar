@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mapRemoteHttpToInngest } from "@/inngest/remote-http";
 import type { Task } from "@/projection/decide";
 import type { AttioTasks } from "@/projection/project";
 
@@ -42,7 +43,7 @@ export function attioTasks(apiToken: string): AttioTasks & AttioOpenTasks {
         return null;
       }
       if (!response.ok) {
-        throw new Error(`Attio task get failed (${response.status})`);
+        throw attioHttpError(response, "task get");
       }
       const body = taskResponseSchema.parse(await response.json());
       return toTask(body.data);
@@ -56,10 +57,20 @@ export function attioTasks(apiToken: string): AttioTasks & AttioOpenTasks {
         headers: { Authorization: `Bearer ${apiToken}` },
       });
       if (!response.ok) {
-        throw new Error(`Attio task list failed (${response.status})`);
+        throw attioHttpError(response, "task list");
       }
       const body = taskListResponseSchema.parse(await response.json());
       return body.data.map(toTask);
     },
   };
+}
+
+function attioHttpError(response: Response, action: string): Error {
+  return (
+    mapRemoteHttpToInngest({
+      source: "attio",
+      status: response.status,
+      retryAfter: response.headers.get("Retry-After"),
+    }) ?? new Error(`Attio ${action} failed (${response.status})`)
+  );
 }

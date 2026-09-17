@@ -38,7 +38,7 @@ export function decideProjection(input: {
   const { task, binding, eventPresent, connectionTimezone, workspaceSlug } =
     input;
   if (task == null || task.deadline == null) {
-    if (binding != null) {
+    if (binding != null || eventPresent) {
       return { action: "delete" };
     }
     return { action: "noop" };

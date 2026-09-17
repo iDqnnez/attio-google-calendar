@@ -13,7 +13,8 @@ export async function attioWorkspaceSlug(apiToken: string): Promise<string> {
     headers: { Authorization: `Bearer ${apiToken}` },
   });
   if (!response.ok) {
-    throw new Error(`Attio identify failed (${response.status})`);
+    const detail = await response.text();
+    throw new Error(`Attio identify failed (${response.status}): ${detail}`);
   }
 
   const identity = identifySchema.parse(await response.json());

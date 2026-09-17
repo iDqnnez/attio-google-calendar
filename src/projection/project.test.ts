@@ -1,4 +1,4 @@
-import { RetryAfterError } from "inngest";
+import { NonRetriableError, RetryAfterError } from "inngest";
 import { describe, expect, it } from "vitest";
 import { GoogleHttpError } from "@/google/errors";
 import {
@@ -222,6 +222,22 @@ describe("projectOneTask", () => {
     });
   });
 
+  it("Deletion removes an Event that is present even without a Binding", async () => {
+    const bindings = memoryBindings();
+    const calendar = memoryEvents([{ id: EVENT_ID, etag: "etag-1" }]);
+
+    await projectOneTask({
+      taskId: TASK_ID,
+      connection,
+      tasks: tasksOf(null),
+      bindings,
+      events: calendar.events,
+    });
+
+    expect(calendar.deleted).toEqual([EVENT_ID]);
+    expect(await bindings.findByTaskId(TASK_ID)).toBeNull();
+  });
+
   it("Deletion (Attio 404) deletes the Event and ends the Binding", async () => {
     const bindings = memoryBindings([
       {
@@ -400,6 +416,106 @@ describe("projectOneTask", () => {
     expect(error).toBeInstanceOf(RetryAfterError);
     expect(error).toMatchObject({ retryAfter: "120" });
     expect(await bindings.findByTaskId(TASK_ID)).toBeNull();
+  });
+
+  it("Google Calendar 403 quota retries after Retry-After", async () => {
+    const bindings = memoryBindings();
+    const events: CalendarEvents = {
+      async get() {
+        return null;
+      },
+      async insert() {
+        throw new GoogleHttpError(403, "30", true);
+      },
+      async update() {
+        throw new Error("update should not run");
+      },
+      async delete() {
+        throw new Error("delete should not run");
+      },
+    };
+
+    const error = await projectOneTask({
+      taskId: TASK_ID,
+      connection,
+      tasks: tasksOf(qualifyingTask()),
+      bindings,
+      events,
+    }).then(
+      () => {
+        throw new Error("expected RetryAfterError");
+      },
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(RetryAfterError);
+    expect(error).toMatchObject({ retryAfter: "30" });
+  });
+
+  it("Google Calendar 401 is not retried", async () => {
+    const bindings = memoryBindings();
+    const events: CalendarEvents = {
+      async get() {
+        throw new GoogleHttpError(401);
+      },
+      async insert() {
+        throw new Error("insert should not run");
+      },
+      async update() {
+        throw new Error("update should not run");
+      },
+      async delete() {
+        throw new Error("delete should not run");
+      },
+    };
+
+    const error = await projectOneTask({
+      taskId: TASK_ID,
+      connection,
+      tasks: tasksOf(qualifyingTask()),
+      bindings,
+      events,
+    }).then(
+      () => {
+        throw new Error("expected NonRetriableError");
+      },
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(NonRetriableError);
+  });
+
+  it("Google Calendar 403 forbidden is not retried", async () => {
+    const bindings = memoryBindings();
+    const events: CalendarEvents = {
+      async get() {
+        return { id: EVENT_ID, etag: "etag-1" };
+      },
+      async insert() {
+        throw new Error("insert should not run");
+      },
+      async update() {
+        throw new GoogleHttpError(403, null, false);
+      },
+      async delete() {
+        throw new Error("delete should not run");
+      },
+    };
+
+    const error = await projectOneTask({
+      taskId: TASK_ID,
+      connection,
+      tasks: tasksOf(qualifyingTask()),
+      bindings,
+      events,
+    }).then(
+      () => {
+        throw new Error("expected NonRetriableError");
+      },
+      (caught: unknown) => caught,
+    );
+
+    expect(error).toBeInstanceOf(NonRetriableError);
   });
 
   it("Heal inserts the same Event id when update finds the Event missing", async () => {

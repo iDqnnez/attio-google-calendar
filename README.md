@@ -61,3 +61,13 @@ npx inngest-cli@latest dev
 ## Vercel
 
 On Vercel, `maxDuration` on `/api/inngest` and `checkpointing.maxRuntime` on the Inngest client are required. This repo sets `maxDuration = 300` and `checkpointing.maxRuntime = "240s"`. Do not leave `maxRuntime` at the unlimited default.
+
+## Deployment Protection
+
+One Operator per instance. `/` and Connect are unauthenticated in the app, so lock the deployment on Vercel before Connect:
+
+- **Method**: [Vercel Authentication](https://vercel.com/docs/deployment-protection) (project members only).
+- **Scope**: **All Deployments** — includes the production domain. Standard Protection leaves production open.
+- **Inngest**: enable [Protection Bypass for Automation](https://vercel.com/docs/deployment-protection/methods-to-bypass-deployment-protection/protection-bypass-automation). Paste the secret into the Inngest Vercel integration so `/api/inngest` stays reachable under protection.
+- **Attio**: Attio cannot send the bypass header. Connect registers `{APP_URL}/api/webhooks/attio`. After Connect, update that webhook’s target URL in Attio to `{APP_URL}/api/webhooks/attio?x-vercel-protection-bypass={secret}`. `Attio-Signature` still gates the route.
+- **Google OAuth**: keep the consent screen in **Testing** with only the Operator’s Google account as a test user, so Connect cannot complete for anyone else.

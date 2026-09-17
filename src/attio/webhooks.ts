@@ -30,7 +30,10 @@ export function attioWebhooks(apiToken: string): AttioWebhookRegistry {
         }),
       });
       if (!response.ok) {
-        throw new Error(`Attio webhook create failed (${response.status})`);
+        const detail = await response.text();
+        throw new Error(
+          `Attio webhook create failed (${response.status}): ${detail}`,
+        );
       }
       const body = createdWebhookSchema.parse(await response.json());
       return { id: body.data.id.webhook_id, secret: body.data.secret };

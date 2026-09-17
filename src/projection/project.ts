@@ -1,5 +1,5 @@
-import { RetryAfterError } from "inngest";
 import { GoogleHttpError } from "@/google/errors";
+import { mapRemoteHttpToInngest } from "@/inngest/remote-http";
 import {
   decideProjection,
   eventIdForTask,
@@ -224,23 +224,17 @@ async function googleWrite<T>(op: () => Promise<T>): Promise<T> {
   try {
     return await op();
   } catch (error) {
-    if (error instanceof GoogleHttpError && error.status === 429) {
-      throw new RetryAfterError(
-        "Google rate limited",
-        retryAfterFromHeader(error.retryAfter),
-        { cause: error },
-      );
+    if (error instanceof GoogleHttpError) {
+      const mapped = mapRemoteHttpToInngest({
+        source: "google-calendar",
+        status: error.status,
+        retryAfter: error.retryAfter,
+        quota: error.quota,
+      });
+      if (mapped != null) {
+        throw mapped;
+      }
     }
     throw error;
   }
-}
-
-function retryAfterFromHeader(header: string | null): number | Date {
-  if (header == null || header === "") {
-    return 60_000;
-  }
-  if (/^\d+$/.test(header)) {
-    return Number(header) * 1000;
-  }
-  return new Date(header);
 }

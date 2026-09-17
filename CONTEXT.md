@@ -53,7 +53,7 @@ Attio. Task state is authoritative; Event state is derived.
 _Avoid_: source of truth, master
 
 **Projection**:
-Applying current Task state onto its Event: create, update, or remove the Event.
+Applying current Task state onto its Event: create, update, or remove the Event. A Binding is not required to remove an Event that is already present.
 _Avoid_: synchronization, two-way sync, replication
 
 **Backfill**:
@@ -72,5 +72,5 @@ _Avoid_: restore (that would mean honouring a Calendar-side delete)
 A Task marked complete. The Event remains and is updated. Completion is not Deletion.
 
 **Deletion**:
-A Task removed in Attio. The Event is removed and the Binding ends.
+A Task removed in Attio. The Event is removed if it exists; the Binding ends if it exists.
 _Avoid_: archive

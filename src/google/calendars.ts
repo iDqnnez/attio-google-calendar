@@ -20,7 +20,10 @@ export function googleDedicatedCalendar(accessToken: string): DedicatedCalendar 
         },
       );
       if (!response.ok) {
-        throw new Error(`Google calendar create failed (${response.status})`);
+        const detail = await response.text();
+        throw new Error(
+          `Google calendar create failed (${response.status}): ${detail}`,
+        );
       }
       return { id: createdCalendarSchema.parse(await response.json()).id };
     },

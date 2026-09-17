@@ -85,18 +85,18 @@ describe("decideProjection", () => {
       expected: { action: "noop" },
     },
     {
-      name: "a missing Task with an Event present but no Binding is a noop",
+      name: "Deletion removes the Event when it is present even without a Binding",
       task: null,
       binding: null,
       eventPresent: true,
-      expected: { action: "noop" },
+      expected: { action: "delete" },
     },
     {
-      name: "a Task with no Deadline, no Binding, and an Event present is a noop",
+      name: "clearing a Deadline removes the Event when it is present even without a Binding",
       task: task({ deadline: null }),
       binding: null,
       eventPresent: true,
-      expected: { action: "noop" },
+      expected: { action: "delete" },
     },
     {
       name: "a Qualifying Task with Binding and Event present is updated",

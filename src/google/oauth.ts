@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { mapRemoteHttpToInngest } from "@/inngest/remote-http";
 
 export const GOOGLE_CALENDAR_CREATE_SCOPE =
   "https://www.googleapis.com/auth/calendar.app.created";
@@ -93,7 +94,13 @@ export async function refreshGoogleAccessToken(params: {
     body,
   });
   if (!response.ok) {
-    throw new Error(`Google token refresh failed (${response.status})`);
+    throw (
+      mapRemoteHttpToInngest({
+        source: "google-token",
+        status: response.status,
+        retryAfter: response.headers.get("Retry-After"),
+      }) ?? new Error(`Google token refresh failed (${response.status})`)
+    );
   }
   return tokenResponseSchema.parse(await response.json()).access_token;
 }
