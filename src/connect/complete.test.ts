@@ -48,6 +48,7 @@ function fakeCalendars() {
 
 function fakeWebhooks() {
   const created: Parameters<AttioWebhookRegistry["create"]>[0][] = [];
+  const updated: { id: string; targetUrl: string }[] = [];
 
   const webhooks: AttioWebhookRegistry = {
     async create(input) {
@@ -57,9 +58,12 @@ function fakeWebhooks() {
         secret: `secret-${created.length}`,
       };
     },
+    async updateTargetUrl(id, targetUrl) {
+      updated.push({ id, targetUrl });
+    },
   };
 
-  return { webhooks, created };
+  return { webhooks, created, updated };
 }
 
 function fakeBackfill() {
@@ -181,7 +185,7 @@ describe("completeConnect", () => {
   it("re-connect reuses the stored webhook and does not register a duplicate", async () => {
     const connections = memoryStore([storedConnection]);
     const { calendars } = fakeCalendars();
-    const { webhooks, created } = fakeWebhooks();
+    const { webhooks, created, updated } = fakeWebhooks();
     const backfill = fakeBackfill();
 
     await completeConnect({
@@ -196,6 +200,7 @@ describe("completeConnect", () => {
     });
 
     expect(created).toEqual([]);
+    expect(updated).toEqual([{ id: "webhook-1", targetUrl: WEBHOOK_URL }]);
     expect(backfill.enqueued).toEqual([1]);
   });
 

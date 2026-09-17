@@ -38,5 +38,26 @@ export function attioWebhooks(apiToken: string): AttioWebhookRegistry {
       const body = createdWebhookSchema.parse(await response.json());
       return { id: body.data.id.webhook_id, secret: body.data.secret };
     },
+    async updateTargetUrl(id, targetUrl) {
+      const response = await fetch(
+        `https://api.attio.com/v2/webhooks/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${apiToken}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: { target_url: targetUrl },
+          }),
+        },
+      );
+      if (!response.ok) {
+        const detail = await response.text();
+        throw new Error(
+          `Attio webhook update failed (${response.status}): ${detail}`,
+        );
+      }
+    },
   };
 }

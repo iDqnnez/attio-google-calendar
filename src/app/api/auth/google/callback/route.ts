@@ -5,7 +5,13 @@ import { attioWorkspaceSlug } from "@/attio/identify";
 import { attioWebhooks } from "@/attio/webhooks";
 import { completeConnect } from "@/connect/complete";
 import { prismaConnectionStore } from "@/db/connections";
-import { appUrl, attioEnv, connectionTimezone, googleOAuthEnv } from "@/env";
+import {
+  appUrl,
+  attioEnv,
+  attioWebhookTargetUrl,
+  connectionTimezone,
+  googleOAuthEnv,
+} from "@/env";
 import { googleDedicatedCalendar } from "@/google/calendars";
 import {
   exchangeGoogleAuthorizationCode,
@@ -63,7 +69,7 @@ export async function GET(request: Request) {
       google: { sub, refreshToken: tokens.refreshToken },
       workspaceSlug,
       timezone: connectionTimezone(),
-      webhookTargetUrl: `${appUrl()}/api/webhooks/attio`,
+      webhookTargetUrl: attioWebhookTargetUrl(),
       connections: prismaConnectionStore,
       calendars: googleDedicatedCalendar(tokens.accessToken),
       webhooks: attioWebhooks(attioEnv().apiToken),

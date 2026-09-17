@@ -40,6 +40,7 @@ export type AttioWebhookRegistry = {
     targetUrl: string;
     subscriptions: TaskWebhookSubscription[];
   }): Promise<{ id: string; secret: string }>;
+  updateTargetUrl(id: string, targetUrl: string): Promise<void>;
 };
 
 const TASK_WEBHOOK_SUBSCRIPTIONS: TaskWebhookSubscription[] = [
@@ -70,13 +71,22 @@ export async function completeConnect(input: {
     existing?.calendarId ??
     (await input.calendars.create({ summary: "Attio Tasks" })).id;
 
-  const webhook =
-    existing?.attioWebhookId != null && existing.attioWebhookSecret != null
-      ? { id: existing.attioWebhookId, secret: existing.attioWebhookSecret }
-      : await input.webhooks.create({
-          targetUrl: input.webhookTargetUrl,
-          subscriptions: TASK_WEBHOOK_SUBSCRIPTIONS,
-        });
+  let webhook: { id: string; secret: string };
+  if (existing?.attioWebhookId != null && existing.attioWebhookSecret != null) {
+    await input.webhooks.updateTargetUrl(
+      existing.attioWebhookId,
+      input.webhookTargetUrl,
+    );
+    webhook = {
+      id: existing.attioWebhookId,
+      secret: existing.attioWebhookSecret,
+    };
+  } else {
+    webhook = await input.webhooks.create({
+      targetUrl: input.webhookTargetUrl,
+      subscriptions: TASK_WEBHOOK_SUBSCRIPTIONS,
+    });
+  }
 
   const connection: ConnectionRecord = {
     googleAccountSub: input.google.sub,
