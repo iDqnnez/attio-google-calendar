@@ -50,7 +50,7 @@ export function decideProjection(input: {
   };
 }
 
-function eventDraft(
+export function eventDraft(
   task: Task,
   deadline: string,
   connectionTimezone: string,

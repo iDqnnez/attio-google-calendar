@@ -2,7 +2,7 @@ import { cron, NonRetriableError } from "inngest";
 import { attioTasks } from "@/attio/tasks";
 import { runCatchUpLoader } from "@/catch-up/loader";
 import { runBackfillLoader } from "@/connect/backfill";
-import { listBoundTaskIds as loadBoundTaskIds, prismaBindingStore } from "@/db/bindings";
+import { listBindings, prismaBindingStore } from "@/db/bindings";
 import { findReadyConnection } from "@/db/connections";
 import { attioEnv, googleOAuthEnv } from "@/env";
 import { googleCalendarEvents } from "@/google/events";
@@ -115,12 +115,32 @@ export const catchUpTasks = inngest.createFunction(
     triggers: [cron("0 * * * *")],
   },
   async ({ step }) => {
+    const connection = await step.run("load-connection", async () => {
+      const ready = await findReadyConnection();
+      if (ready == null) {
+        return null;
+      }
+      return {
+        calendarId: ready.calendarId,
+        workspaceSlug: ready.workspaceSlug,
+        timezone: ready.timezone,
+      };
+    });
+    if (connection == null) {
+      return { enqueued: 0 };
+    }
+
     const tasks = attioTasks(attioEnv().apiToken);
     return runCatchUpLoader({
-      listOpenPage: (query) =>
-        step.run("list-open-tasks", () => tasks.listOpen(query)),
-      listBoundTaskIds: (query) =>
-        step.run("list-bound-tasks", () => loadBoundTaskIds(query)),
+      connection,
+      listTasksPage: (query) =>
+        step.run("list-tasks", () => tasks.listAll(query)),
+      listBindingsPage: (query) =>
+        step.run("list-bindings", () => listBindings(query)),
+      listEventsPage: (pageToken) =>
+        step.run("list-events", async () =>
+          (await googleEvents()).listPage(connection.calendarId, pageToken),
+        ),
       enqueueChunk: async (taskIds) => {
         await step.sendEvent(
           "enqueue-projections",

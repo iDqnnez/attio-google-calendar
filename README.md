@@ -20,7 +20,7 @@ A Task with no Deadline is not projected.
 - **Completion**: the Event stays. Title and date still follow Attio.
 - **Deletion**: the Event is removed and the Binding ends.
 - **Heal**: a missing Event is created again. Deleting an Event on the Calendar does not stick.
-- **Catch-up**: hourly. It projects Open Qualifying Tasks and every Task that already has a Binding, so missed creates, updates (including Completion), Deletions, cleared Deadlines, and Heal are repaired.
+- **Catch-up**: hourly. It compares Tasks, Bindings, and Events on the Calendar, and projects only Tasks that drifted, so missed creates, updates (including Completion), Deletions, cleared Deadlines, and Heal are repaired without re-projecting Tasks that are already in sync.
 
 ## Environment
 

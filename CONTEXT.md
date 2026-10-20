@@ -61,7 +61,7 @@ The one-time Projection of existing Open Qualifying Tasks when the Connection is
 _Avoid_: import, initial sync, historical sync
 
 **Catch-up**:
-A periodic Projection of Open Qualifying Tasks and every Task that already has a Binding, to repair missed webhooks.
+A periodic comparison of Tasks, Bindings, and Events that Projects only Tasks whose Event may have drifted (no Binding yet, missing or Calendar-edited Event, missed Attio change, Deletion), to repair missed webhooks.
 _Avoid_: full sync, resync, poll
 
 **Heal**:

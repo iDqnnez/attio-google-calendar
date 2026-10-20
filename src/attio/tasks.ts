@@ -33,7 +33,34 @@ export type AttioOpenTasks = {
   listOpen(query: { limit: number; offset: number }): Promise<Task[]>;
 };
 
-export function attioTasks(apiToken: string): AttioTasks & AttioOpenTasks {
+export type AttioAllTasks = {
+  listAll(query: { limit: number; offset: number }): Promise<Task[]>;
+};
+
+export function attioTasks(
+  apiToken: string,
+): AttioTasks & AttioOpenTasks & AttioAllTasks {
+  async function list(
+    query: { limit: number; offset: number },
+    isCompleted: boolean | null,
+  ): Promise<Task[]> {
+    const url = new URL("https://api.attio.com/v2/tasks");
+    if (isCompleted != null) {
+      url.searchParams.set("is_completed", String(isCompleted));
+    }
+    url.searchParams.set("limit", String(query.limit));
+    url.searchParams.set("offset", String(query.offset));
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${apiToken}` },
+    });
+    if (!response.ok) {
+      throw attioHttpError(response, "task list");
+    }
+    const body = taskListResponseSchema.parse(await response.json());
+    return body.data.map(toTask);
+  }
+
+
   return {
     async get(taskId) {
       const response = await fetch(`https://api.attio.com/v2/tasks/${taskId}`, {
@@ -48,19 +75,11 @@ export function attioTasks(apiToken: string): AttioTasks & AttioOpenTasks {
       const body = taskResponseSchema.parse(await response.json());
       return toTask(body.data);
     },
-    async listOpen(query) {
-      const url = new URL("https://api.attio.com/v2/tasks");
-      url.searchParams.set("is_completed", "false");
-      url.searchParams.set("limit", String(query.limit));
-      url.searchParams.set("offset", String(query.offset));
-      const response = await fetch(url, {
-        headers: { Authorization: `Bearer ${apiToken}` },
-      });
-      if (!response.ok) {
-        throw attioHttpError(response, "task list");
-      }
-      const body = taskListResponseSchema.parse(await response.json());
-      return body.data.map(toTask);
+    listOpen(query) {
+      return list(query, false);
+    },
+    listAll(query) {
+      return list(query, null);
     },
   };
 }

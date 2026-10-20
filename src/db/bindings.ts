@@ -1,17 +1,17 @@
+import type { BoundTask } from "@/catch-up/loader";
 import type { BindingRecord, BindingStore } from "@/projection/project";
 import { prisma } from "./prisma";
 
-export async function listBoundTaskIds(query: {
+export async function listBindings(query: {
   limit: number;
   offset: number;
-}): Promise<string[]> {
-  const rows = await prisma.binding.findMany({
-    select: { taskId: true },
+}): Promise<BoundTask[]> {
+  return prisma.binding.findMany({
+    select: { taskId: true, calendarId: true, eventId: true, etag: true },
     orderBy: { taskId: "asc" },
     skip: query.offset,
     take: query.limit,
   });
-  return rows.map((row) => row.taskId);
 }
 
 export const prismaBindingStore: BindingStore = {
